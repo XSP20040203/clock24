@@ -1,4 +1,4 @@
-/* Clock24 — v1.0
+/* Clock24 — v2.0
    一天是一个圆。深色为默认，光源来自时间本身。 */
 
 :root {
@@ -11,6 +11,8 @@
   --c-muted: #94A3B8;
   --c-border: rgba(255, 255, 255, 0.08);
   --c-ring: #D97706;
+  --c-solar: #FBBF24;
+  --c-night: rgba(99, 102, 241, 0.22);
 
   --glow: 0 0 10px;
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
@@ -36,6 +38,8 @@ html[data-theme="light"] {
   --c-primary: #B45309;
   --c-secondary: #D97706;
   --c-ring: #B45309;
+  --c-solar: #B45309;
+  --c-night: rgba(99, 102, 241, 0.16);
   --glow: 0 0 0;
 }
 
@@ -47,7 +51,7 @@ body {
   margin: 0;
   padding: var(--space-6) var(--space-4);
   display: grid;
-  place-items: center;
+  place-items: start center;
   background: var(--c-bg);
   color: var(--c-fg);
   font-family: Inter, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
@@ -75,6 +79,8 @@ body::before {
   position: relative;
   z-index: 1;
   width: min(560px, 100%);
+  margin: 0 auto;
+  padding-bottom: var(--space-6);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -104,7 +110,7 @@ body::before {
 /* ---------- 表盘 ---------- */
 .clock {
   position: relative;
-  width: min(400px, 82vw);
+  width: min(400px, 88vw);
   aspect-ratio: 1;
   display: grid;
   place-items: center;
@@ -138,9 +144,10 @@ body::before {
 /* 昼夜分界：0–5 时与 19–24 时的弧比白天暗一档 */
 .night-arc {
   fill: none;
-  stroke: rgba(99, 102, 241, 0.22);
+  stroke: var(--c-night);
   stroke-width: 10;
   stroke-linecap: butt;
+  transition: stroke var(--t-mid) var(--ease);
 }
 
 .tick {
@@ -165,9 +172,17 @@ body::before {
 
 .tick-label.is-quarter { fill: var(--c-fg); opacity: 0.72; }
 
+/* 日出 / 日落：贴在环外沿的两个三角，指向盘心 */
+.solar-mark {
+  fill: var(--c-solar);
+  stroke: var(--c-bg);
+  stroke-width: 2;
+  transition: fill var(--t-mid) var(--ease), stroke var(--t-mid) var(--ease);
+}
+
 .marker-halo {
   fill: var(--c-secondary);
-  opacity: 0.22;
+  opacity: 0.28;
 }
 
 .marker-core {
@@ -192,9 +207,17 @@ body::before {
   color: var(--c-primary);
 }
 
+.digital-line {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+}
+
 .digital {
   display: block;
-  font-size: clamp(2.5rem, 12vw, 3.75rem);
+  font-size: clamp(2.25rem, 11vw, 3.75rem);
   font-weight: 300;
   line-height: 1;
   letter-spacing: 0.02em;
@@ -203,11 +226,28 @@ body::before {
   text-shadow: var(--glow) rgba(217, 119, 6, 0.28);
 }
 
+.meridiem {
+  margin-top: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--c-primary);
+}
+
 .dateline {
   margin: var(--space-3) 0 0;
   font-size: 0.8125rem;
   color: var(--c-muted);
   letter-spacing: 0.04em;
+}
+
+.tzline {
+  margin: 4px 0 0;
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  opacity: 0.75;
 }
 
 /* ---------- 数据条 ---------- */
@@ -259,12 +299,75 @@ body::before {
   transition: width 1s linear;
 }
 
+.solar-note {
+  margin: calc(-1 * var(--space-3)) 0 0;
+  font-size: 0.75rem;
+  color: var(--c-muted);
+  letter-spacing: 0.03em;
+  text-align: center;
+}
+
+.solar-note b { color: var(--c-solar); font-weight: 600; }
+
+/* ---------- 时区对照 ---------- */
+.zones { width: 100%; }
+
+.zone-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+}
+
+.zone {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px var(--space-2);
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: 11px;
+  text-align: center;
+  transition: background var(--t-mid) var(--ease), border-color var(--t-mid) var(--ease);
+}
+
+.zone.is-primary { border-color: rgba(217, 119, 6, 0.45); }
+
+.zone-city {
+  font-size: 0.6875rem;
+  color: var(--c-muted);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.zone-time {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  color: var(--c-fg);
+}
+
+.zone-delta {
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+  color: var(--c-primary);
+  min-height: 1em;
+}
+
+.zone-delta.is-past { color: var(--c-accent); }
+
 /* ---------- 控制 ---------- */
-.controls { display: flex; gap: var(--space-3); }
+.controls { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-3); }
 
 .btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
   min-height: 44px;
   min-width: 44px;
@@ -278,30 +381,156 @@ body::before {
   border-radius: 11px;
   cursor: pointer;
   transition: background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease),
-              transform var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+              transform var(--t-fast) var(--ease), color var(--t-fast) var(--ease),
+              opacity var(--t-fast) var(--ease);
 }
 
 .btn svg { width: 18px; height: 18px; fill: currentColor; flex: none; }
 
-.btn:hover { border-color: var(--c-primary); color: var(--c-primary); }
+.btn:hover:not(:disabled) { border-color: var(--c-primary); color: var(--c-primary); }
 
-.btn:active { transform: translateY(1px); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
 
 .btn:focus-visible {
   outline: 2px solid var(--c-ring);
   outline-offset: 2px;
 }
 
-.btn[aria-pressed="true"] {
-  border-color: var(--c-primary);
-  color: var(--c-primary);
+.btn:disabled { opacity: 0.42; cursor: not-allowed; }
+
+.btn[aria-pressed="true"] { border-color: var(--c-primary); color: var(--c-primary); }
+
+.btn-sm { min-height: 38px; padding: 0 var(--space-3); font-size: 0.8125rem; }
+
+/* ---------- 面板 ---------- */
+.panel {
+  width: 100%;
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: background var(--t-mid) var(--ease), border-color var(--t-mid) var(--ease);
 }
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  padding: 6px;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.tab {
+  flex: 1;
+  min-height: 38px;
+  padding: 0 var(--space-3);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--c-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+
+.tab:hover { color: var(--c-fg); }
+
+.tab[aria-selected="true"] { background: var(--c-bg); color: var(--c-primary); }
+
+.tab:focus-visible { outline: 2px solid var(--c-ring); outline-offset: -2px; }
+
+.tabpanel {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* display:flex 会盖掉 UA 的 [hidden]，得手动还回去 */
+.tabpanel[hidden] { display: none; }
+
+.field { display: flex; align-items: center; gap: var(--space-3); }
+
+.field > label {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  flex: none;
+  min-width: 4.5em;
+}
+
+.field-coords { flex-wrap: wrap; }
+.field-coords > label { min-width: auto; }
+.field-coords > input { flex: 1 1 6em; min-width: 5.5em; }
+
+select,
+input[type="number"] {
+  flex: 1;
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--c-fg);
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: 9px;
+  transition: border-color var(--t-fast) var(--ease);
+}
+
+select:hover, input[type="number"]:hover { border-color: var(--c-primary); }
+
+select:focus-visible, input[type="number"]:focus-visible {
+  outline: 2px solid var(--c-ring);
+  outline-offset: 1px;
+  border-color: var(--c-ring);
+}
+
+.field-note { margin: 0; font-size: 0.6875rem; color: var(--c-muted); }
+
+/* ---------- 秒表 ---------- */
+.sw-display {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(1.75rem, 8vw, 2.5rem);
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: 0.02em;
+  color: var(--c-fg);
+}
+
+.sw-controls { display: flex; justify-content: center; gap: var(--space-2); }
+
+.sw-laps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 148px;
+  overflow-y: auto;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.sw-laps:empty { display: none; }
+
+.sw-laps li {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px var(--space-2);
+  border-bottom: 1px solid var(--c-border);
+  color: var(--c-muted);
+}
+
+.sw-laps li span:last-child { color: var(--c-fg); }
 
 .hint {
   margin: 0;
   font-size: 0.75rem;
   color: var(--c-muted);
   letter-spacing: 0.04em;
+  text-align: center;
 }
 
 kbd {
@@ -316,14 +545,18 @@ kbd {
 
 /* ---------- 响应式 ---------- */
 @media (max-width: 480px) {
-  body { padding: var(--space-5) var(--space-3); }
+  body { padding: var(--space-4) var(--space-3); }
+  .stage { gap: var(--space-4); }
   .stats { grid-template-columns: 1fr; gap: var(--space-3); }
   .stat { flex-direction: row; justify-content: space-between; align-items: baseline; }
   .tick-label { font-size: 10px; }
+  .zone-list { grid-template-columns: repeat(2, 1fr); }
+  .field { flex-wrap: wrap; }
+  .field > label { min-width: auto; }
 }
 
 @media (min-width: 1024px) {
-  .clock { width: min(440px, 60vh); }
+  .clock { width: min(400px, 56vh); }
 }
 
 /* ---------- 动效克制 ---------- */

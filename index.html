@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Clock24 · 一天是一个圆</title>
-<meta name="description" content="把一天画成一个圆环的 24 小时时钟：实时走针、昼夜弧、日进度与午夜倒计时。">
+<meta name="description" content="把一天画成一个圆环的 24 小时时钟：实时走针、昼夜弧、日进度、多时区对照与秒表。">
 <meta name="color-scheme" content="dark light">
 <meta name="theme-color" content="#0F172A">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='13' fill='none' stroke='%23D97706' stroke-width='3' stroke-dasharray='58 24' stroke-linecap='round'/><circle cx='16' cy='6' r='3' fill='%23F59E0B'/></svg>">
@@ -24,11 +24,12 @@
     <section class="clock" aria-labelledby="dialTitle">
       <svg class="dial" viewBox="0 0 400 400" role="img" aria-labelledby="dialTitle dialDesc">
         <title id="dialTitle">24 小时环</title>
-        <desc id="dialDesc">外圈 24 格刻度代表 0 到 23 时；弧线表示今天已经流逝的部分，光点表示此刻的位置。</desc>
+        <desc id="dialDesc">外圈 24 格刻度代表 0 到 23 时；弧线表示今天已经流逝的部分，光点表示此刻的位置，两侧的三角是日出与日落。</desc>
         <g id="dial-static"></g>
         <g id="dial-night"></g>
         <circle class="dial-track" cx="200" cy="200" r="170"></circle>
         <circle class="dial-progress" id="progressArc" cx="200" cy="200" r="170"></circle>
+        <g id="dial-solar"></g>
         <g id="dial-marker" class="dial-marker">
           <circle class="marker-halo" r="16" cx="200" cy="30"></circle>
           <circle class="marker-core" r="5.5" cx="200" cy="30"></circle>
@@ -37,8 +38,12 @@
 
       <div class="readout">
         <p class="phase" id="phase">清晨</p>
-        <time class="digital" id="digital" datetime="00:00:00" aria-live="off">00:00:00</time>
+        <p class="digital-line">
+          <time class="digital" id="digital" datetime="00:00:00" aria-live="off">00:00:00</time>
+          <span class="meridiem" id="meridiem" hidden>AM</span>
+        </p>
         <p class="dateline" id="dateline">—</p>
+        <p class="tzline" id="tzline">—</p>
       </div>
     </section>
 
@@ -59,6 +64,12 @@
 
     <div class="rail" aria-hidden="true"><span id="railFill"></span></div>
 
+    <p class="solar-note" id="solarNote">—</p>
+
+    <section class="zones" aria-label="时区对照">
+      <ul class="zone-list" id="zoneList"></ul>
+    </section>
+
     <div class="controls">
       <button type="button" id="btnPause" class="btn" aria-pressed="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="7" y="5" width="3.5" height="14" rx="1.2"/><rect x="13.5" y="5" width="3.5" height="14" rx="1.2"/></svg>
@@ -68,9 +79,45 @@
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.5a8.5 8.5 0 1 0 8.5 8.5c0-.4-.03-.8-.09-1.19A6.6 6.6 0 0 1 12 3.6c-.05-.03-1 0 0-.1Z"/></svg>
         <span>换肤</span>
       </button>
+      <button type="button" id="btnFormat" class="btn" aria-pressed="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm.75 4.5v1.3a3.2 3.2 0 0 1 2.15 1.2l-1.1.8c-.3-.42-.72-.66-1.2-.66-.42 0-.7.2-.7.5 0 .34.3.5 1.05.75.98.32 1.85.75 1.85 1.9 0 .9-.62 1.5-1.55 1.72v1.24h-1.5v-1.24c-.95-.2-1.7-.72-2.15-1.5l1.15-.75c.32.52.85.85 1.5.85.5 0 .8-.22.8-.55 0-.36-.33-.53-1.1-.78-.95-.3-1.75-.7-1.75-1.85 0-.87.6-1.48 1.55-1.7V7.5h1.5Z"/></svg>
+        <span id="formatLabel">24 时</span>
+      </button>
     </div>
 
-    <p class="hint">空格 <kbd>暂停</kbd> · T <kbd>换肤</kbd></p>
+    <section class="panel">
+      <div class="tabs" role="tablist" aria-label="工具面板">
+        <button type="button" role="tab" id="tab-setup" aria-controls="panel-setup" aria-selected="true" tabindex="0" class="tab">设置</button>
+        <button type="button" role="tab" id="tab-stopwatch" aria-controls="panel-stopwatch" aria-selected="false" tabindex="-1" class="tab">秒表</button>
+      </div>
+
+      <div role="tabpanel" id="panel-setup" aria-labelledby="tab-setup" class="tabpanel">
+        <div class="field">
+          <label for="tzSelect">表盘时区</label>
+          <select id="tzSelect"></select>
+        </div>
+        <div class="field field-coords">
+          <label for="latInput">纬度</label>
+          <input id="latInput" type="number" step="0.0001" min="-90" max="90" inputmode="decimal" value="39.9042">
+          <label for="lonInput">经度</label>
+          <input id="lonInput" type="number" step="0.0001" min="-180" max="180" inputmode="decimal" value="116.4074">
+          <button type="button" id="btnGeo" class="btn btn-sm">定位</button>
+        </div>
+        <p class="field-note" id="geoNote">日出日落按这对坐标近似计算。</p>
+      </div>
+
+      <div role="tabpanel" id="panel-stopwatch" aria-labelledby="tab-stopwatch" class="tabpanel" hidden>
+        <p class="sw-display" id="swDisplay" role="timer" aria-live="off">00:00.00</p>
+        <div class="sw-controls">
+          <button type="button" id="swStart" class="btn btn-sm">开始</button>
+          <button type="button" id="swLap" class="btn btn-sm" disabled>分段</button>
+          <button type="button" id="swReset" class="btn btn-sm" disabled>清零</button>
+        </div>
+        <ol class="sw-laps" id="swLaps"></ol>
+      </div>
+    </section>
+
+    <p class="hint">空格 <kbd>暂停</kbd> · T <kbd>换肤</kbd> · ?tz=Asia/Tokyo <kbd>指定时区</kbd></p>
 
     <noscript><p class="hint">这个页面靠 JavaScript 走针，请打开它。</p></noscript>
   </main>
