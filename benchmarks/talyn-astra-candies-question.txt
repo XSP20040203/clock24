@@ -1,0 +1,4 @@
+In a black bag, there are three flavors of candies. Each flavor has two different shapes (round and star-shaped, and the different shapes can be distinguished by touch). The statistics of the quantities of candies of different flavors and different shapes are as follows in the table. Contestants need to decide in advance the number of candies to be drawn. Then, what is the minimum number of candies that need to be taken out to ensure that there are both round apple-flavored and star-apricot-flavored candies in hand at the same time? (It is sufficient if there are round apple-flavored candies matching star-apricot-flavored candies, or there are round-apricot-flavored candies matching star-apple-flavored candies in hand.)
+Apple flavor: Round 7, Star-shaped 9;
+Apricot flavor: Round 7, Star-shaped 6;
+Watermelon flavor: Round 8, Star-shaped 4.
