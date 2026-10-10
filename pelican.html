@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>鹈鹕骑自行车</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center;
+      overflow: hidden; background: linear-gradient(#8bd8f2 0 62%, #f4c870 62%);
+      font-family: system-ui, sans-serif;
+    }
+    .scene { width: min(100vw, 1000px); aspect-ratio: 16 / 9; }
+    svg { display: block; width: 100%; height: 100%; }
+    .cloud { fill: #fff8e8; opacity: .8; animation: drift 24s linear infinite; }
+    .cloud.two { animation-duration: 34s; animation-delay: -12s; opacity: .55; }
+    .wheel { fill: none; stroke: #26364d; stroke-width: 7; }
+    .spokes { fill: none; stroke: #52677d; stroke-width: 2; stroke-dasharray: 2 25.6; transform-origin: center; animation: spin .8s linear infinite; }
+    .bike { fill: none; stroke: #d94f45; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+    .bike-thin { fill: none; stroke: #d94f45; stroke-width: 4; stroke-linecap: round; }
+    .feather { fill: #f5f0df; stroke: #26364d; stroke-width: 5; stroke-linejoin: round; }
+    .wing { transform-box: fill-box; transform-origin: 50% 70%; animation: flap .8s ease-in-out infinite alternate; }
+    .leg { fill: none; stroke: #e29546; stroke-width: 9; stroke-linecap: round; animation: pedal .8s linear infinite; transform-box: fill-box; transform-origin: 50% 0; }
+    .leg.back { animation-delay: -.4s; }
+    .pedal { fill: #26364d; }
+    .bird { animation: bob .8s ease-in-out infinite; }
+    .beak { fill: #e29546; stroke: #26364d; stroke-width: 5; stroke-linejoin: round; }
+    .eye { fill: #26364d; }
+    .caption { fill: #26364d; font-size: 22px; font-weight: 700; letter-spacing: .12em; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pedal { 50% { transform: rotate(25deg); } 100% { transform: rotate(0deg); } }
+    @keyframes flap { to { transform: rotate(-13deg); } }
+    @keyframes bob { 50% { transform: translateY(-7px); } }
+    @keyframes drift { from { transform: translateX(-110px); } to { transform: translateX(110px); } }
+    @media (prefers-reduced-motion: reduce) {
+      .cloud, .wheel .spokes, .wing, .leg, .bird { animation-play-state: paused; }
+    }
+  </style>
+</head>
+<body>
+  <main class="scene" aria-label="一只鹈鹕骑自行车的 SVG 动画">
+    <svg viewBox="0 0 1000 562" role="img" aria-labelledby="title desc">
+      <title id="title">鹈鹕骑自行车</title>
+      <desc id="desc">一只鹈鹕踩着自行车沿着沙滩前进，翅膀随骑行节奏扇动。</desc>
+      <rect width="1000" height="562" fill="#8bd8f2"/>
+      <circle cx="820" cy="105" r="52" fill="#ffe28a"/>
+      <g class="cloud" transform="translate(120 120)"><path d="M0 35c0-22 28-35 49-20 11-32 61-29 69 5 28-9 53 12 49 38H0Z"/></g>
+      <g class="cloud two" transform="translate(690 205) scale(.75)"><path d="M0 35c0-22 28-35 49-20 11-32 61-29 69 5 28-9 53 12 49 38H0Z"/></g>
+      <path d="M0 355 Q250 320 500 355T1000 350V562H0Z" fill="#f4c870"/>
+      <path d="M0 425 Q250 390 500 425T1000 420" fill="none" stroke="#e6af5c" stroke-width="6" opacity=".7"/>
+      <text class="caption" x="500" y="510" text-anchor="middle">鹈鹕出发！</text>
+
+      <g transform="translate(0 20)">
+        <!-- bicycle -->
+        <g transform="translate(285 385)">
+          <circle class="wheel" r="72"/>
+          <circle class="spokes" r="67"/>
+        </g>
+        <g transform="translate(650 385)">
+          <circle class="wheel" r="72"/>
+          <circle class="spokes" r="67"/>
+        </g>
+        <path class="bike" d="M285 385 390 270 500 385 650 385 558 248 390 270M500 385 558 248M558 248h55M390 270l-12-25h-38"/>
+        <path class="bike-thin" d="M500 385q-20-35-54 0M435 385l-15 16m15-16 17 13"/>
+
+        <!-- pelican -->
+        <g class="bird">
+          <path class="feather" d="M430 268c-45-37-43-103 13-126 45-19 92 13 91 60-1 37-27 74-67 79Z"/>
+          <path class="feather wing" d="M464 210c-38-7-74 14-77 57 33 19 74 9 94-28Z"/>
+          <path class="feather" d="M469 151c-13-43 16-88 59-90 35-2 61 26 57 58-3 28-29 49-63 47Z"/>
+          <path class="beak" d="M535 143c64-11 105 6 112 21-28 20-69 25-110 7Z"/>
+          <circle class="eye" cx="545" cy="127" r="7"/>
+          <path d="M584 159q17 4 31 0" fill="none" stroke="#b65e3b" stroke-width="3"/>
+          <!-- legs and pedals -->
+          <g class="leg" transform="translate(465 260)"><path d="M0 0 38 100"/><path class="pedal" d="m38 100-23 13m23-13 24 10"/></g>
+          <g class="leg back" transform="translate(510 258)"><path d="M0 0-18 100"/><path class="pedal" d="m-18 100-23-11m23 11 22 13"/></g>
+        </g>
+      </g>
+    </svg>
+  </main>
+</body>
+</html>
